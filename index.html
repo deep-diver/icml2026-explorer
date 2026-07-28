@@ -624,7 +624,7 @@ class Starfield{
   this.updateControls();}
   startSlide(l1){this.slideList=this.stars.filter(s=>s.l1===l1);this.slideIdx=0;this.goSlide();this.ensureTimer();}
   startAffSlide(){this.slideList=this.stars.slice();this.slideIdx=0;if(!this.slideList.length){this.slide=null;this.updateControls();return;}this.goSlide();this.ensureTimer();}
-  pauseSlide(){if(this.slideTimer){clearInterval(this.slideTimer);this.slideTimer=null;}this.slidecard.style.display='none';this.updateControls();}
+  pauseSlide(){if(this.slideTimer){clearInterval(this.slideTimer);this.slideTimer=null;}this.updateControls();}
   stopSlide(){this.pauseSlide();this.slide=null;this.slideList=[];this.slideIdx=0;this.slidecard.style.display='none';this.updateControls();}
   drawClusterLabels(proj,ctx,cx,cy,f){
     const l1groups={};
