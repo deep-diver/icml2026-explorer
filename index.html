@@ -872,11 +872,13 @@ function select(forum){
     if(base&&base.x!=null){
       const arr=[];
       for(const p of PAPERS){if(p.forum===forum||p.x==null)continue;
-        const s=Math.round((p.x*base.x+p.y*base.y+p.z*base.z)*1000)/1000;
+        const s=p.x*base.x+p.y*base.y+p.z*base.z;
         arr.push({forum:p.forum,score:s});
       }
       arr.sort((a,b)=>b.score-a.score);
-      sd.results=arr.slice(0,8);
+      // normalize to 0-1 based on top score
+      const maxS=arr[0]?arr[0].score:1;
+      sd.results=arr.slice(0,8).map(r=>({forum:r.forum,score:Math.round(r.score/maxS*1000)/1000}));
     }
     const slot=document.getElementById('similar-slot');if(!slot||!sd.results||!sd.results.length)return;
     slot.innerHTML='<div class="seclbl2" style="margin-top:14px">🔗 Similar papers</div>'+sd.results.map(r=>{
