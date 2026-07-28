@@ -4,7 +4,6 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ICML 2026 Paper Explorer</title>
-<meta name="description" content="Explore 8126 ICML 2026 papers with 3D similarity map, semantic search, and rich summaries"/>
 <style>
 :root.light{--bg:#f5f6f8;--panel:#fff;--panel2:#ebedf0;--panel3:#e2e5ea;--ink:#1a1d24;--mut:#5f6675;--faint:#8a93a3;--acc:#2563eb;--line:#dadde2;--line2:#cdd1d8;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.06)}
 @media(max-width:1100px){.layout{grid-template-columns:1fr !important}.col.l{display:none !important}.col.r{position:fixed;right:0;top:57px;bottom:0;width:min(420px,90vw);z-index:20;transform:translateX(100%);transition:.3s}.col.r.open{transform:translateX(0)}.main{padding:12px !important}.search{max-width:180px}.brand span{display:none}}</style>
@@ -272,7 +271,7 @@
   <div class="col r detail" id="detail" role="complementary"><div class="empty">👆 Click a paper to see details.<br><br>💡 <b>Similarity:</b> drag=rotate · scroll=zoom<br>💡 <b>List:</b> j/k keys to flip pages<br>💡 Search bar for semantic query<br>💡 Double-click a star to zoom</div></div>
 </div>
 
-<div id="modal" class="modal" onclick="if(event.target===this)closePDF()"><div class="modalbox" style="max-width:1100px"><button class="x" onclick="closePDF()">✕</button><div class="pdf-side"><iframe id="modalpdf" style="width:100%"></iframe></div></div></div>
+<div id="modal" class="modal" onclick="if(event.target===this)closePDF()"><div class="modalbox"><button class="x" onclick="closePDF()">✕</button><div class="pdf-side"><iframe id="modalpdf"></iframe></div><div class="chat-side"><div class="chat-head">💬 Paper Chat <select id="chat-model" style="background:var(--panel3);color:var(--ink);border:1px solid var(--line2);border-radius:6px;padding:2px 4px;font-size:11px;margin-left:auto"><option value="gpt-5.5">GPT-5.5</option><option value="gpt-4o-mini">GPT-4o-mini</option></select></div><div id="chat-msgs" class="chat-msgs"></div><div id="chat-suggest" class="chat-suggest"></div><div class="chat-bar"><input id="chat-input" placeholder="Ask about this paper..." onkeydown="if(event.key==='Enter')sendChat()" /><button onclick="sendChat()">Send</button></div></div></div></div>
 
 <script>
 let PAPERS=[],STATS={},VIEW='map',SEL=null,PAPER_MAP={};
@@ -710,15 +709,10 @@ class Starfield{
         ctx.beginPath();ctx.arc(o.sx,o.sy,sz*dof,0,6.283);ctx.fill();
       }
     }
-    // beacon lines + labels for top results (query OR filter context)
+    // beacon lines + labels for top results (query context only, not for affiliation/track filter)
     let beacons=[];
     if(this.queryScores){
       beacons=Object.entries(this.queryScores).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([f,s],i)=>({forum:f,score:s,label:'#'+(i+1)+' '+s.toFixed(2)}));
-    }else if(F.aff||F.track){
-      // top spotlight papers in filtered set, else first few
-      const filt=this.stars.filter(s=>s.star).slice(0,5);
-      const src=filt.length?filt:this.stars.slice(0,5);
-      beacons=src.map((s,i)=>({forum:s.forum,score:0.6,label:'#'+(i+1)+(s.star?' ★':'')}));
     }
     if(beacons.length){
       const sm=new Map(this.stars.map(s=>[s.forum,s]));
@@ -866,20 +860,7 @@ function select(forum){
     extra.innerHTML=html;
   }).catch(()=>{const e=document.getElementById('detail-extra');if(e)e.innerHTML='';});
   // async: similar
-  Promise.resolve().then(()=>{
-    const sd={results:[]};
-    const base=PAPER_MAP[forum];
-    if(base&&base.x!=null){
-      const arr=[];
-      for(const p of PAPERS){if(p.forum===forum||p.x==null)continue;
-        const s=p.x*base.x+p.y*base.y+p.z*base.z;
-        arr.push({forum:p.forum,score:s});
-      }
-      arr.sort((a,b)=>b.score-a.score);
-      // normalize to 0-1 based on top score
-      const maxS=arr[0]?arr[0].score:1;
-      sd.results=arr.slice(0,8).map(r=>({forum:r.forum,score:Math.round(r.score/maxS*1000)/1000}));
-    }
+  Promise.resolve().then(()=>{const sd={results:[]};const base=PAPER_MAP[forum];
     const slot=document.getElementById('similar-slot');if(!slot||!sd.results||!sd.results.length)return;
     slot.innerHTML='<div class="seclbl2" style="margin-top:14px">🔗 Similar papers</div>'+sd.results.map(r=>{
       const pp=PAPER_MAP[r.forum];if(!pp)return'';
@@ -900,65 +881,9 @@ function renderSummaryCard(s){
   if(m.length||ds.length)h+=`<div class="chips2">${m.map(x=>`<span class="tagc" style="cursor:pointer" onclick="document.getElementById('qsearch')&&(document.getElementById('qsearch').value='${esc(x).replace(/'/g,"\\'")}');window.SF&&window.SF.doQuery();switchTab('map')">${esc(x)}</span>`).join('')}${ds.map(x=>`<span class="tagd" style="cursor:pointer" onclick="document.getElementById('qsearch')&&(document.getElementById('qsearch').value='${esc(x).replace(/'/g,"\\'")}');window.SF&&window.SF.doQuery();switchTab('map')">${esc(x)}</span>`).join('')}</div>`;
   return h+'</div>';
 }
-
 window.openPDF=function(forum){window.open('https://openreview.net/forum?id='+forum,'_blank');}
-/* old:  CHAT_FORUM=forum;
-  const saved=sessionStorage.getItem('chat_'+forum);
-  if(saved){CHAT_HISTORY=JSON.parse(saved);}else{CHAT_HISTORY=[];}
-  const m=document.getElementById('chat-msgs');
-  if(CHAT_HISTORY.length){
-    m.innerHTML=CHAT_HISTORY.map(h=>`<div class="chat-msg ${h.role}">${h.role==='user'?esc(h.content):marked.parse(h.content)}</div>`).join('');
-  }else{
-    m.innerHTML='<div class="chat-msg bot">📄 Full PDF loaded. Ask me anything about this paper!</div>';
-  }
-  document.getElementById('chat-input').value='';
-  m.scrollTop=m.scrollHeight;
-  const sq=document.getElementById('chat-suggest');
-  const suggestions=['What is the main contribution?','Summarize the method in 3 bullets','What datasets are used?','What are the limitations?','How does it compare to prior work?'];
-  sq.innerHTML=suggestions.map(s=>`<span class="sq" data-q="${esc(s)}">${esc(s)}</span>`).join('');
-  sq.querySelectorAll('.sq').forEach(b=>b.onclick=()=>{document.getElementById('chat-input').value=b.dataset.q;sendChat();});
-}
-*/
-window.closePDF=function(){document.getElementById('modal').classList.remove('on');}
-window.sendChat=async function(){
-  const inp=document.getElementById('chat-input');
-  const q=inp.value.trim();if(!q)return;
-  inp.value='';
-  const m=document.getElementById('chat-msgs');
-  m.insertAdjacentHTML('beforeend',`<div class="chat-msg user">${esc(q)}</div>`);
-  const tid='t'+Date.now();
-  m.insertAdjacentHTML('beforeend',`<div class="chat-msg bot" id="${tid}">⏳</div>`);
-  m.scrollTop=m.scrollHeight;
-  let fullText='';
-  const botEl=document.getElementById(tid);
-  try{
-    const chatModel=document.getElementById('chat-model')?.value||'gpt-5.5';
-    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({forum:CHAT_FORUM,question:q,history:CHAT_HISTORY,model:chatModel})});
-    const reader=response.body.getReader();
-    const decoder=new TextDecoder();
-    botEl.innerHTML='';
-    while(true){
-      const{done,value}=await reader.read();
-      if(done)break;
-      const chunk=decoder.decode(value,{stream:true});
-      const lines=chunk.split('\n');
-      for(const line of lines){
-        if(!line.startsWith('data: '))continue;
-        const data=line.slice(6);
-        if(data==='[DONE]')continue;
-        try{
-          const parsed=JSON.parse(data);
-          if(parsed.content){fullText+=parsed.content;botEl.innerHTML=marked.parse(fullText);m.scrollTop=m.scrollHeight;}
-          if(parsed.error){botEl.innerHTML='<span style="color:#ff6f9c">Error: '+esc(parsed.error)+'</span>';break;}
-        }catch(e){}
-      }
-    }
-    if(!fullText)botEl.textContent='(no response)';
-    CHAT_HISTORY.push({role:'user',content:q},{role:'assistant',content:fullText});
-    
-  }catch(e){botEl.innerHTML='<span style="color:#ff6f9c">⚠ '+(e.message.includes('fetch')?'Connection error — is the server running?':esc(e.message))+'</span>';}
-  m.scrollTop=m.scrollHeight;
-};
+window.closePDF=function(){}
+window.sendChat=function(){};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePDF();});
 init();
 </script>
