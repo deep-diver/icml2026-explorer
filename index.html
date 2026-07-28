@@ -222,7 +222,7 @@
     <div class="tab" onclick="document.documentElement.classList.toggle('light');localStorage.setItem('theme',document.documentElement.classList.contains('light')?'light':'dark')" title="Toggle theme">🌓</div>
   </div>
 </header>
-<div class="subheader" id="subheader" style="display:none"><div id="active-filters" class="active-filters"></div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><div class="chiprow" id="venue-chips" style="gap:5px;margin-right:12px;padding-right:12px;border-right:1px solid var(--line2)"></div><div class="chiprow" id="track-chips" style="gap:5px"></div></div></div>
+<div class="subheader" id="subheader" style="display:none"><div id="active-filters" class="active-filters"></div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><div class="chiprow" id="venue-chips" style="gap:5px;margin-right:12px;padding-right:12px;border-right:1px solid var(--line2)"></div><div class="chiprow" id="track-chips" style="gap:5px;margin-right:12px;padding-right:12px;border-right:1px solid var(--line2)"></div><button class="chip" id="bm-sub" onclick="F.savedOnly=!F.savedOnly;this.classList.toggle('on',F.savedOnly);render()">★ Saved</button></div></div>
 <div class="layout">
   <div class="col l">
     <div class="seg">
@@ -317,7 +317,7 @@ async function init(){
   const q=document.getElementById('quick');
   q.innerHTML=L1ORDER.slice(0,8).map(l=>`<div class="chip" data-l1="${esc(l)}" style="--c:${L1COLORS[l]}">${esc(L1SHORT[l])}</div>`).join('');
   q.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{drillTo(c.dataset.l1);q.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c));});
-  document.getElementById('reset').onclick=()=>{F={venue:'',conf:'',l1:'',aff:'',day:'',track:'',sort:'',savedOnly:false,tree:{l1:'',l2:'',l3:''},q:''};document.getElementById('search').value='';vc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.v));q.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));document.getElementById('bm-show').classList.remove('on');const dc=document.getElementById('day-chips');if(dc)dc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.d));const tc=document.getElementById('track-chips');if(tc)tc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.track));render();};
+  document.getElementById('reset').onclick=()=>{F={venue:'',conf:'',l1:'',aff:'',day:'',track:'',sort:'',savedOnly:false,tree:{l1:'',l2:'',l3:''},q:''};document.getElementById('search').value='';vc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.v));q.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));document.getElementById('bm-show').classList.remove('on');document.getElementById('bm-sub').classList.remove('on');const dc=document.getElementById('day-chips');if(dc)dc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.d));const tc=document.getElementById('track-chips');if(tc)tc.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',!x.dataset.track));render();};
   document.getElementById('search').oninput=e=>{clearTimeout(window._st);window._st=setTimeout(()=>{F.q=e.target.value.toLowerCase();render();},250);};
   // f-conf removed (confidence filter dropped)
   const fa=document.getElementById('f-aff');
@@ -341,6 +341,7 @@ async function init(){
   document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
     if(e.key==='/'){e.preventDefault();document.getElementById('search').focus();}
+    else if(e.key==='b'&&window.SF&&window.SF.slide){saveForum(window.SF.slide.forum);if(window.SF.slidecard){window.SF.slidecard.style.outline=SAVED.has(window.SF.slide.forum)?'2px solid #ffd166':'none';}updateBmCount();}
     else if(VIEW==='list'&&(e.key==='j'||e.key==='ArrowDown')){e.preventDefault();pageNav(1);}
     else if(VIEW==='list'&&(e.key==='k'||e.key==='ArrowUp')){e.preventDefault();pageNav(-1);}
     else if(e.key==='Escape'){closePDF();}
@@ -829,7 +830,7 @@ function renderStats(){
     <h3 style="margin-top:26px">Top authors (8+ papers)</h3><div class="bars">${authorRows}</div>
     <div style="margin-top:24px;padding:14px;background:var(--panel2);border-radius:12px;color:var(--faint);font-size:12px;line-height:1.6">
       📊 <b>${STATS.total}</b> total · <b>${VISITED.size}</b> visited by you · <b>${SAVED.size}</b> bookmarked<br>
-      💡 <b>/</b> search · <b>j/k</b> list nav · <b>🎲</b> random · click tags/authors to filter
+      💡 <b>/</b> search · <b>j/k</b> list nav · <b>b</b> bookmark during slideshow · <b>🎲</b> random · click tags/authors to filter
     </div>`;
 }
 function select(forum){
