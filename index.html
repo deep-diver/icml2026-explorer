@@ -342,6 +342,11 @@ async function init(){
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
     if(e.key==='/'){e.preventDefault();document.getElementById('search').focus();}
     else if(e.key==='b'&&window.SF&&window.SF.slide){saveForum(window.SF.slide.forum);window.SF.goSlide();updateBmCount();}
+    else if(VIEW==='map'&&window.SF&&window.SF.slide&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){
+      e.preventDefault();
+      if(e.key==='ArrowRight')window.SF.nextManual();else window.SF.prevManual();
+      window.SF.pauseSlide();clearTimeout(window._resumeT);window._resumeT=setTimeout(()=>window.SF.ensureTimer(),5000);
+    }
     else if(VIEW==='list'&&(e.key==='j'||e.key==='ArrowDown')){e.preventDefault();pageNav(1);}
     else if(VIEW==='list'&&(e.key==='k'||e.key==='ArrowUp')){e.preventDefault();pageNav(-1);}
     else if(e.key==='Escape'){closePDF();}
@@ -569,8 +574,9 @@ class Starfield{
     c.onclick=()=>{if(moved)return;const h=this.hit(this.mouse.x,this.mouse.y);
       this.shockwaves.push({x:this.mouse.x,y:this.mouse.y,r:0,life:1,c:h?(L1COLORS[h.l1]||'#fff'):'#fff'});
       if(h){
-        // click a star → select it, pin it, clear hover, DON'T stop slideshow
+        // click a star → select it, pin it, pause slideshow 5s
         this.pinned=h.forum;this.hover=null;select(h.forum);
+        this.pauseSlide();clearTimeout(this._resumeT);this._resumeT=setTimeout(()=>{if(this.slideList.length)this.ensureTimer();},5000);
       }else{
         // click empty space → stop slideshow + clear pin → hover mode re-engages
         this.pinned=null;this.curHL=null;SEL=null;this.stopSlide();
