@@ -899,10 +899,8 @@ function renderSummaryCard(s){
   return h+'</div>';
 }
 
-window.openPDF=function(forum){
-  document.getElementById('modalpdf').src='https://openreview.net/pdf?id='+forum;
-  document.getElementById('modal').classList.add('on');
-  CHAT_FORUM=forum;
+window.openPDF=function(forum){window.open('https://openreview.net/forum?id='+forum,'_blank');}
+/* old:  CHAT_FORUM=forum;
   const saved=sessionStorage.getItem('chat_'+forum);
   if(saved){CHAT_HISTORY=JSON.parse(saved);}else{CHAT_HISTORY=[];}
   const m=document.getElementById('chat-msgs');
@@ -918,7 +916,8 @@ window.openPDF=function(forum){
   sq.innerHTML=suggestions.map(s=>`<span class="sq" data-q="${esc(s)}">${esc(s)}</span>`).join('');
   sq.querySelectorAll('.sq').forEach(b=>b.onclick=()=>{document.getElementById('chat-input').value=b.dataset.q;sendChat();});
 }
-window.closePDF=function(){document.getElementById('modal').classList.remove('on');document.getElementById('modalpdf').src='';}
+*/
+window.closePDF=function(){document.getElementById('modal').classList.remove('on');}
 window.sendChat=async function(){
   const inp=document.getElementById('chat-input');
   const q=inp.value.trim();if(!q)return;
