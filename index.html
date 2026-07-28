@@ -341,7 +341,7 @@ async function init(){
   document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
     if(e.key==='/'){e.preventDefault();document.getElementById('search').focus();}
-    else if(e.key==='b'&&window.SF&&window.SF.slide){saveForum(window.SF.slide.forum);if(window.SF.slidecard){window.SF.slidecard.style.outline=SAVED.has(window.SF.slide.forum)?'2px solid #ffd166':'none';}updateBmCount();}
+    else if(e.key==='b'&&window.SF&&window.SF.slide){saveForum(window.SF.slide.forum);window.SF.goSlide();updateBmCount();}
     else if(VIEW==='list'&&(e.key==='j'||e.key==='ArrowDown')){e.preventDefault();pageNav(1);}
     else if(VIEW==='list'&&(e.key==='k'||e.key==='ArrowUp')){e.preventDefault();pageNav(-1);}
     else if(e.key==='Escape'){closePDF();}
@@ -469,8 +469,9 @@ class Starfield{
     this.info=document.createElement('div'); this.info.style.cssText='position:absolute;right:14px;top:14px;min-width:210px;background:rgba(12,14,18,.68);border:1px solid #262c39;border-radius:12px;padding:13px 15px;z-index:9;display:none;backdrop-filter:blur(6px);font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4)';
     this.trend=document.createElement('div'); this.trend.className='trend';
     this.controls=document.createElement('div'); this.controls.className='slidebar';
-    this.controls.innerHTML='<button class="sbtn" data-act="prev">⏮</button><button class="sbtn splay" data-act="play">⏸</button><button class="sbtn" data-act="next">⏭</button><span class="spos"></span><div class="sspeed"><button class="sbtn sm" data-speed="6000">slow</button><button class="sbtn sm" data-speed="3200">normal</button><button class="sbtn sm" data-speed="1500">fast</button></div>';
+    this.controls.innerHTML='<button class="sbtn" data-act="prev">⏮</button><button class="sbtn splay" data-act="play">⏸</button><button class="sbtn" data-act="next">⏭</button><span class="spos"></span><button class="sbtn" id="ctrl-bm" title="Bookmark current (b key)" style="font-size:13px">☆</button><span style="color:var(--faint);font-size:10px;margin-left:4px">b=bookmark</span><div class="sspeed"><button class="sbtn sm" data-speed="6000">slow</button><button class="sbtn sm" data-speed="3200">normal</button><button class="sbtn sm" data-speed="1500">fast</button></div>';
     this.controls.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{if(b.dataset.act==='prev')this.prevManual();else if(b.dataset.act==='next')this.nextManual();else this.togglePlay();});
+    this.controls.querySelector('#ctrl-bm').onclick=()=>{if(this.slide){saveForum(this.slide.forum);this.goSlide();updateBmCount();}};
     this.controls.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{this.slideSpeed=parseInt(b.dataset.speed);this.pauseSlide();this.ensureTimer();this.updateControls();});
     host.appendChild(this.tip); host.appendChild(this.panel); host.appendChild(this.hint); host.appendChild(this.info); host.appendChild(this.trend); host.appendChild(this.controls);
     this.slidecard=document.createElement('div'); this.slidecard.className='slidecard'; this.slidecard.style.display='none';
@@ -605,7 +606,7 @@ class Starfield{
       const c=L1COLORS[p.L1]||'#888';
       const ol=p.ol||'';
       const kp=p.kp||[];
-      let html=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="background:${c};color:#0b0e14;font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px">${esc(L1SHORT[p.L1]||p.L1)}</span>${p.venue&&p.venue.includes('spotlight')?'<span style="color:#ffd166;font-size:10px">★</span>':''}</div>`;
+      let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="display:flex;align-items:center;gap:6px"><span style="background:${c};color:#0b0e14;font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px">${esc(L1SHORT[p.L1]||p.L1)}</span>${p.venue&&p.venue.includes('spotlight')?'<span style="color:#ffd166;font-size:10px">★</span>':''}</div><span id="slideBm" style="cursor:pointer;font-size:14px;color:${SAVED.has(this.slide.forum)?'#ffd166':'#5b6473'}" onclick="saveForum('${this.slide.forum}');window.SF.goSlide();updateBmCount();">${SAVED.has(this.slide.forum)?'★':'☆'}</span></div>`;
       html+=`<div style="font-weight:700;font-size:13px;line-height:1.3;margin-bottom:5px">${esc(p.title)}</div>`;
       if(ol)html+=`<div style="color:#c5cbd6;font-size:11.5px;line-height:1.45;margin-bottom:5px;font-style:italic">${esc(ol)}</div>`;
       if(kp.length)html+=`<ul style="margin:0;padding-left:14px;color:#9aa4b2;font-size:11px;line-height:1.4">${kp.slice(0,3).map(k=>`<li style="margin:2px 0">${esc(k.slice(0,80))}${k.length>80?'…':''}</li>`).join('')}</ul>`;
